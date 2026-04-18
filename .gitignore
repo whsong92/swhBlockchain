@@ -1,0 +1,29 @@
+# swhBlockchain - 인증서 및 개인키는 Git에 포함하지 않습니다.
+# 스크립트를 통해 필요할 때마다 생성하여 사용합니다.
+
+# 생성된 인증서 및 키 파일이 담길 디렉토리
+ca/
+server/
+client/
+certs/
+
+# OpenSSL이 생성하는 시리얼 번호 파일
+*.srl
+
+# Rust build artifacts
+target/
+swhClient/target/
+Cargo.lock
+
+# Go build artifacts
+swhServer/swhServer
+go.sum
+
+# Local Database (Sled)
+blockchain_db/
+.swh_data/
+
+# Editor & OS files
+.vscode/
+.idea/
+.DS_Store

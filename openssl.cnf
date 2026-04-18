@@ -1,0 +1,42 @@
+# OpenSSL configuration for swhBlockchain mTLS
+[ req ]
+distinguished_name = req_distinguished_name
+req_extensions     = v3_req
+prompt             = no
+
+[ req_distinguished_name ]
+# Country, State, Locality, etc. can be left blank for development
+C   = KR
+ST  = Seoul
+L   = Seoul
+O   = swhWeb
+OU  = swhBlockchain
+# Common Name will be overridden by scripts
+CN  = example.com
+
+[ v3_ca ]
+subjectKeyIdentifier   = hash
+authorityKeyIdentifier = keyid:always,issuer
+basicConstraints       = critical, CA:true
+keyUsage               = critical, digitalSignature, cRLSign, keyCertSign
+
+[ v3_server ]
+basicConstraints       = CA:FALSE
+nsCertType             = server
+subjectKeyIdentifier   = hash
+authorityKeyIdentifier = keyid,issuer:always
+keyUsage               = critical, digitalSignature, keyEncipherment
+extendedKeyUsage       = serverAuth
+subjectAltName         = @alt_names
+
+[ v3_client ]
+basicConstraints       = CA:FALSE
+nsCertType             = client
+subjectKeyIdentifier   = hash
+authorityKeyIdentifier = keyid,issuer:always
+keyUsage               = critical, digitalSignature
+extendedKeyUsage       = clientAuth
+
+[ alt_names ]
+DNS.1 = localhost
+IP.1  = 127.0.0.1

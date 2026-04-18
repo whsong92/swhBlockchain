@@ -1,0 +1,52 @@
+syntax = "proto3";
+
+package swh.blockchain.v1;
+option go_package = "swhServer/proto;swh_pb";
+
+// 사용자 지갑 및 서명 정보
+message Identity {
+  string public_key = 1;     // 사용자의 공개키 (Ed25519 또는 Secp256k1)
+  bytes signature = 2;       // Payload 전체에 대한 전자 서명값
+  int64 timestamp = 3;       // 재전송 공격(Replay Attack) 방지용 타임스탬프
+}
+
+// 서비스 제공자가 검증을 요청하는 조건
+message ProviderCondition {
+  string provider_id = 1;
+  string condition_query = 2; // 예: "age >= 19 AND balance >= 1000"
+}
+
+// 원장 검증 요청 페이로드
+message VerifyLedgerRequest {
+  Identity user_identity = 1;
+  bytes encrypted_ledger_snapshot = 2; // 증명에 필요한 최소한의 원장 상태 스냅샷
+  ProviderCondition condition = 3;
+}
+
+// 원장 검증 응답
+message VerifyLedgerResponse {
+  bool is_valid = 1;         // 조건 부합 여부 (True/False)
+  string transaction_id = 2; // 검증 이력 추적용 ID
+  string error_message = 3;  // 실패 시 사유
+}
+
+// 새로운 거래(상태 변경) 요청
+message SubmitTransactionRequest {
+  Identity sender_identity = 1;
+  Identity receiver_identity = 2; // 수신자가 있을 경우
+  bytes transaction_payload = 3;  // 전송 금액 또는 상태 변경 내역 (JSON 등)
+}
+
+// 새로운 거래 응답
+message SubmitTransactionResponse {
+  bool success = 1;
+  string block_hash = 2;          // 거래가 포함될(또는 포함된) 블록의 해시
+}
+
+service LedgerService {
+  // 제공자의 조건에 맞는지 원장 상태를 검증
+  rpc VerifyCondition (VerifyLedgerRequest) returns (VerifyLedgerResponse);
+  
+  // 상태 변경 및 거래 전송
+  rpc SubmitTransaction (SubmitTransactionRequest) returns (SubmitTransactionResponse);
+}

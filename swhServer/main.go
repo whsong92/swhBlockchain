@@ -40,13 +40,15 @@ type Block struct {
 // NodeState 는 서버의 현재 상태를 관리합니다.
 type NodeState struct {
 	sync.Mutex
-	Nodes []string // 연결된 다른 피어 노드 목록
-	Chain []Block  // 로컬 체인 복사본 (조회용)
+	Nodes   []string                    // 연결된 다른 피어 노드 목록
+	Chain   []Block                     // 로컬 체인 복사본 (조회용)
+	Anchors map[string]*pb.AnchorRecord // [신규] 퍼블릭 체인에 기록된 앵커 데이터 (Key -> Record)
 }
 
 var state = NodeState{
-	Nodes: []string{},
-	Chain: []Block{},
+	Nodes:   []string{},
+	Chain:   []Block{},
+	Anchors: make(map[string]*pb.AnchorRecord),
 }
 
 func main() {
@@ -57,7 +59,7 @@ func main() {
 	http.HandleFunc("/transactions/new", newTxHandler)      // 새 거래 생성
 	http.HandleFunc("/nodes/register", registerNodeHandler) // 피어 노드 등록
 
-	port := ":8080"
+	port := ":8081"
 	fmt.Printf("✅ swhServer(Go)가 포트 %s에서 실행 중입니다...\n", port)
 	fmt.Println("🚀 Rust 클라이언트(swhClient)와 통신할 준비가 되었습니다.")
 
@@ -158,7 +160,7 @@ func (s *grpcServer) SubmitTransaction(ctx context.Context, req *pb.SubmitTransa
 	log.Printf("📡 SubmitTransaction 요청 수신:")
 	log.Printf("   - Sender PubKey (Hex): %s", req.SenderIdentity.PublicKey)
 
-	// 1. 서명 검증 (이 트랜잭션 요청에는 조건문(ConditionQuery)이 없으므로 빈 문자열 전달)
+	// 1. 서명 검증
 	isValid, err := verifier.VerifySignature(
 		req.SenderIdentity.PublicKey,
 		req.TransactionPayload,
@@ -172,24 +174,29 @@ func (s *grpcServer) SubmitTransaction(ctx context.Context, req *pb.SubmitTransa
 		return &pb.SubmitTransactionResponse{Success: false, BlockHash: ""}, nil
 	}
 
-	// 2. Payload 파싱 (JSON 형식의 Transaction 구조체라고 가정)
+	// 2. Payload 파싱
 	var tx Transaction
 	if err := json.Unmarshal(req.TransactionPayload, &tx); err != nil {
 		log.Printf("❌ 트랜잭션 페이로드 파싱 실패: %v", err)
 		return &pb.SubmitTransactionResponse{Success: false, BlockHash: ""}, nil
 	}
 
-	// 3. 상태(Chain) 업데이트 로직 (메모리상에 새 블록 생성)
+	// 3. 상태 업데이트 및 앵커링 기록
 	state.Lock()
 	defer state.Unlock()
 
-	prevHash := "0" // 제네시스 블록 처리용
+	// 앵커 정보가 포함되어 있다면 퍼블릭 체인(Anchors)에 기록
+	if req.Anchor != nil {
+		log.Printf("🔗 앵커링 기록 중: Key=%s, Hash=%s", req.Anchor.Key, req.Anchor.LedgerHash)
+		state.Anchors[req.Anchor.Key] = req.Anchor
+	}
+
+	prevHash := "0"
 	if len(state.Chain) > 0 {
 		prevHash = state.Chain[len(state.Chain)-1].Hash
 	}
 
 	newBlockIndex := len(state.Chain)
-	// 아주 간단한 형태의 블록 해시 생성 로직 (MVP 용도)
 	hashInput := fmt.Sprintf("%d%d%s%s%s%f", newBlockIndex, req.SenderIdentity.Timestamp, prevHash, tx.Sender, tx.Recipient, tx.Amount)
 	hashBytes := sha256.Sum256([]byte(hashInput))
 	newBlockHash := hex.EncodeToString(hashBytes[:])
@@ -209,6 +216,18 @@ func (s *grpcServer) SubmitTransaction(ctx context.Context, req *pb.SubmitTransa
 		Success:   true,
 		BlockHash: newBlock.Hash,
 	}, nil
+}
+
+func (s *grpcServer) GetAnchor(ctx context.Context, req *pb.GetAnchorRequest) (*pb.GetAnchorResponse, error) {
+	state.Lock()
+	defer state.Unlock()
+
+	anchor, found := state.Anchors[req.Key]
+	if !found {
+		return &pb.GetAnchorResponse{Found: false}, nil
+	}
+
+	return &pb.GetAnchorResponse{Found: true, Anchor: anchor}, nil
 }
 
 func startGRPCServer() {

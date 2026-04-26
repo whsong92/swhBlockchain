@@ -1,0 +1,7 @@
+/target
+node_modules
+*.node
+.swh_data
+blockchain_db
+# Cargo.lock은 버전 관리를 위해 포함하는 것이 좋습니다.
+# index.js와 index.d.ts는 현재 수동 관리 중이므로 포함합니다.

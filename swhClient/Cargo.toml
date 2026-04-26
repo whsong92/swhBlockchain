@@ -1,0 +1,29 @@
+[package]
+name = "swhClient"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+napi = { version = "2.12.2", default-features = false, features = ["napi4", "async", "serde-json"] }
+napi-derive = "2.12.2"
+tonic = { version = "0.11", features = ["tls", "tls-roots"] }
+prost = "0.12"
+tokio = { version = "1.1", features = ["macros", "rt-multi-thread"] }
+# 보안 및 암호화 연산 (swhPersona에서 이전)
+argon2 = "0.5"
+aes-gcm = "0.10"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+hex = "0.4"
+# 선택 완료된 Ed25519 서명 알고리즘 적용
+ed25519-dalek = { version = "2.1", features = ["rand_core"] }
+rand = "0.8"
+sled = "0.34"
+reqwest = { version = "0.11", features = ["json"] }
+
+[build-dependencies]
+# 빌드 타임 프로토버퍼 컴파일
+tonic-build = "0.11"

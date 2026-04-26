@@ -1,0 +1,15 @@
+{
+  "name": "swh-client",
+  "version": "0.1.0",
+  "main": "index.js",
+  "types": "index.d.ts",
+  "napi": {
+    "name": "swh-client",
+    "package": {
+      "name": "swh-client"
+    }
+  },
+  "devDependencies": {
+    "@napi-rs/cli": "^2.18.0"
+  }
+}

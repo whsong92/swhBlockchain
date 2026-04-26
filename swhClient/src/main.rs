@@ -23,14 +23,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let test_password = "swh_persona_test_password";
 
-    // 1. 인증서 설정
-    let ca_cert_path = "/home/wwsong/workspace/swhBlockchain/certs/ca/ca.crt";
-    let client_cert_path = "/home/wwsong/workspace/swhBlockchain/certs/client/client.crt";
-    let client_key_path = "/home/wwsong/workspace/swhBlockchain/certs/client/client.key";
-
-    let ca_cert_pem = fs::read(ca_cert_path)?;
-    let client_cert_pem = fs::read(client_cert_path)?;
-    let client_key_pem = fs::read(client_key_path)?;
+    // 1. 인증서 설정 (컴파일 시점에 바이너리에 포함)
+    let ca_cert_pem = include_bytes!("../../certs/ca/ca.crt");
+    let client_cert_pem = include_bytes!("../../certs/client/client.crt");
+    let client_key_pem = include_bytes!("../../certs/client/client.key");
 
     let tls_config = ClientTlsConfig::new()
         .domain_name("localhost")

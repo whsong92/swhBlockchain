@@ -89,13 +89,9 @@ impl SwhCore {
         let lock = self.signing_key.lock().await;
         let signing_key = lock.as_ref().ok_or_else(|| Error::from_reason("로그인이 필요합니다."))?;
 
-        let ca_cert_path = "/home/wwsong/workspace/swhBlockchain/certs/ca/ca.crt";
-        let client_cert_path = "/home/wwsong/workspace/swhBlockchain/certs/client/client.crt";
-        let client_key_path = "/home/wwsong/workspace/swhBlockchain/certs/client/client.key";
-
-        let ca_cert_pem = fs::read(ca_cert_path).map_err(|e| Error::from_reason(e.to_string()))?;
-        let client_cert_pem = fs::read(client_cert_path).map_err(|e| Error::from_reason(e.to_string()))?;
-        let client_key_pem = fs::read(client_key_path).map_err(|e| Error::from_reason(e.to_string()))?;
+        let ca_cert_pem = include_bytes!("../../certs/ca/ca.crt");
+        let client_cert_pem = include_bytes!("../../certs/client/client.crt");
+        let client_key_pem = include_bytes!("../../certs/client/client.key");
 
         let tls_config = ClientTlsConfig::new()
             .domain_name("localhost")

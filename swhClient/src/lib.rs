@@ -42,6 +42,11 @@ impl SwhCore {
     }
 
     #[napi]
+    pub fn is_registered(&self) -> bool {
+        self.storage.is_registered()
+    }
+
+    #[napi]
     pub async fn login(&self, password: String) -> Result<String> {
         let security_data = self.storage.load_security_data()
             .map_err(|e| Error::from_reason(format!("보안 데이터 로드 실패: {}", e)))?;
